@@ -44,15 +44,22 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
   // TODO: Create two new point clouds, one cloud with obstacles and other with segmented plane
 
 	pcl::ExtractIndices<pcl::PointXYZ> extract;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_obstacle (new pcl::PointCloud<pcl::PointXYZ>)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_obstacles (new pcl::PointCloud<pcl::PointXYZ>);
+
 
 	extract.setInputCloud (cloud);
 	extract.setIndices (inliers);
-	extract.setNegative (false);:w
+	extract.setNegative (false);
 
-    extract.filter (*cloud_p);
+    extract.filter (*cloud_plane);
 
-    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult(cloud, cloud);
+	extract.setNegative (true);
+
+    extract.filter (*cloud_obstacles);
+
+
+    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult(cloud_obstacles, cloud_plane);
     return segResult;
 }
 

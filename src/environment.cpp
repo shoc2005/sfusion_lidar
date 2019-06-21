@@ -58,8 +58,8 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr& viewer)
 	std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, 
 			  pcl::PointCloud<pcl::PointXYZ>::Ptr> seg_results = pproc.SegmentPlane(pcloud, 100, 0.2);
 
-	renderPointCloud(viewer, seg_results.first, "Back", Color(80,0,80));
-	renderPointCloud(viewer, seg_results.second, "Cars", Color(0,100,100));
+	renderPointCloud(viewer, seg_results.first, "Obstacles", Color(80,0,80));
+	renderPointCloud(viewer, seg_results.second, "Road", Color(0,100,100));
 	
 }
 
