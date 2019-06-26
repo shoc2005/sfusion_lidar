@@ -86,10 +86,13 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 		/* pick random two points from the point cloud */
 		a = (int)rand() % total_count;
 		b = (int)rand() % total_count;
+		while (a == b) {
+			b = (int)rand() % total_count;
+		}
 
 		/* estimate line equation of standard form for the two points */
-		A = cloud->points[a].y - cloud->points[b].y * 100;
-		B = cloud->points[b].x - cloud->points[a].x * 100;
+		A = cloud->points[a].y - cloud->points[b].y;
+		B = cloud->points[b].x - cloud->points[a].x;
 		C = (cloud->points[a].x * cloud->points[b].y) - (cloud->points[b].x * cloud->points[a].y);		
 
 		/* iterate from all points and estimate distance */
@@ -100,7 +103,7 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 			double x = cloud->points[i].x;
 			double y = cloud->points[i].y;
 			//double z = cloud->points[i].z;
-			dist = abs(A * x + B * y + C) / sqrt(pow(A, 2.0) + pow(B, 2.0));
+			dist = fabs(A * x + B * y + C) / sqrt(pow(A, 2.0) + pow(B, 2.0));
 			if (dist <= distanceTol)   {
 				trial_set.insert(i);
 			}
