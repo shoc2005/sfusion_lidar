@@ -76,9 +76,11 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 	double A = 0.0;
 	double B = 0.0;
 	double C = 0.0;
+	double D = 0.0;
 	int a = 0;
 	int b = 0;
-
+	int c = 0;
+	
 	unsigned long int dist_best = 0;
 	
 	while (maxIterations--) {
@@ -86,15 +88,47 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 		/* pick random two points from the point cloud */
 		a = (int)rand() % total_count;
 		b = (int)rand() % total_count;
-		while (a == b) {
+		c = (int)rand() % total_count;
+
+		while (a == b && a == c && b == c) {
 			b = (int)rand() % total_count;
+			c = (int)rand() % total_count;
 		}
 
-		/* estimate line equation of standard form for the two points */
+
+		/* estimate the line equation of standard form for the two points */
+		/*		
 		A = cloud->points[a].y - cloud->points[b].y;
 		B = cloud->points[b].x - cloud->points[a].x;
 		C = (cloud->points[a].x * cloud->points[b].y) - (cloud->points[b].x * cloud->points[a].y);		
 
+		*/
+
+		/* estimate the plane equation of standard form */
+
+		// init two vectors from the three point (a, b, c)
+		pcl::PointXYZ v1;
+		pcl::PointXYZ v2;
+		pcl::PointXYZ vc;
+
+		v1.x = cloud->points[b].x - cloud->points[a].x;
+		v1.y = cloud->points[b].y - cloud->points[a].y;
+		v1.z = cloud->points[b].z - cloud->points[a].z;
+
+		v2.x = cloud->points[c].x - cloud->points[a].x;
+		v2.y = cloud->points[c].y - cloud->points[a].y;
+		v2.z = cloud->points[c].z - cloud->points[a].z;
+
+		// get cross product of the v1 and v2
+		vc.x = v1.y * v2.z - v1.z * v2.y;
+		vc.y = v1.z * v2.x - v1.x * v2.z;
+		vc.z = v1.x * v2.y - v1.y * v2.x;
+
+		D = -cloud->points[a].x * vc.x - cloud->points[a].y * vc.y - cloud->points[a].z * vc.z;
+		A = vc.x;
+		B = vc.y;
+		C = vc.z;
+	
 		/* iterate from all points and estimate distance */
 		std::unordered_set<int> trial_set; // the temporary set within the Iteration
 
@@ -102,8 +136,9 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 		for(int i = 0; i < total_count; i++) {
 			double x = cloud->points[i].x;
 			double y = cloud->points[i].y;
-			//double z = cloud->points[i].z;
-			dist = fabs(A * x + B * y + C) / sqrt(pow(A, 2.0) + pow(B, 2.0));
+			double z = cloud->points[i].z;
+
+			dist = fabs(A * x + B * y + C * z + D) / sqrt(pow(A, 2.0) + pow(B, 2.0) + pow(C, 2.0));
 			if (dist <= distanceTol)   {
 				trial_set.insert(i);
 			}
@@ -136,7 +171,8 @@ int main (int argc, char *argv[])
 	pcl::visualization::PCLVisualizer::Ptr viewer = initScene();
 
 	// Create data
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData();
+	//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData();
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData3D();
 	std::unordered_set<int> inliers; 
 
 	// TODO: Change the max iteration and distance tolerance arguments for Ransac function
