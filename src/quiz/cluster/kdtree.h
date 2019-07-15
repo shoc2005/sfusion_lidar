@@ -12,6 +12,7 @@ struct Node
 	Node* left;
 	Node* right;
   	int split_dim;
+  	bool processed = false; // used in clustering algorithm only
 
 	Node(std::vector<float> arr, int setId)
 	:	point(arr), id(setId), left(NULL), right(NULL)
@@ -24,6 +25,7 @@ struct KdTree
   	Node** cnode; // the current node
   	int depth = 0;
     bool useLess_ = true;
+  	Node* lastNode; // used in search method
 
 	KdTree()
 	: root(NULL)
@@ -68,49 +70,31 @@ struct KdTree
       
 	}
 
-  // define own comparator 
-  bool mycmp(float lhs, float rhs)
-   {
-      if ( useLess_ )
-      {
-         return (lhs <= rhs);
-      }
-      else
-      {
-         return (lhs >= rhs);
-      }
-   }
-  
+   
   	// return target's box intersection results in the first element:
-  	// 	0 - the node have both sides equal to NULL
   	// 	1 - box locates in the left side
   	// 	2 - box lacates in the right side
   	// 	3 - box intersects both sides
-  	int checkBoxIntersection(std::vector<float> target, Node* node, float distanceTol, int split_dim)
+  	int checkBoxIntersection(std::vector<float> target, Node* node, const float distanceTol, int split_dim)
     {
       int result = 0;
-      if (node->left == NULL && node->right == NULL) return result;
-      if (node->left == NULL) return 2;
-      if (node->right == NULL) return 1;
+
+      float diff;
+      diff = target[split_dim] - node->point[split_dim];
       
-      // chose a side
-      if (target[split_dim] >= node->point[split_dim])
+      // in the right side
+      if (diff >=0) 
       {
-        	distanceTol *= -1;
-        	useLess_ = false;
-      } else useLess_ = true;
-      
-      if (mycmp(target[split_dim] + distanceTol, node->point[split_dim])) result = 1; // the box is located in the left
-      	else
-      	{
-        	if (mycmp(target[split_dim] - distanceTol, node->point[split_dim])) result = 3;  // the box also is located in both sides
-          		else
-                {
-                  result = 2; // the box is only located in the right
-                }
-      	}
-    
-   	// check the node's point is in the box 
+        if (diff - distanceTol >= 0) result = 1; // right
+        else result = 3; // in both sides
+      }
+      // in the left side
+      else 
+      {
+        if (diff + distanceTol < 0) result = 2; // left
+        else result = 3; // in both sides
+      }
+         
     return result;
     }
   
@@ -136,47 +120,58 @@ struct KdTree
   }
   
 	// return a list of point ids in the tree that are within distance of target
-	std::vector<int> search(std::vector<float> target, float distanceTol)
+  	std::vector<int> search(std::vector<float> target, float distanceTol)
 	{
 		Node* cnode = root;
       	std::vector<Node*> node_list = {cnode};
       	std::vector<int> ids;
+      	//depth = 0;
 
       	while (node_list.size() > 0)
         {
+          	//std::cout << "C" << endl;
           	if (*node_list.begin() == NULL) 
             {
-              node_list.erase(node_list.begin());
               break;
-            } else if (isInBox(node_list[0], target, distanceTol)) ids.push_back(node_list[0]->id);
-          	
+            } else if (isInBox((*node_list.begin()), target, distanceTol)) 
+            	{
+              		ids.push_back((*node_list.begin())->id);
+              		lastNode = (*node_list.begin()); // used when we need to know info about a particular point
+            	}
+          	//std::cout << "Split dim= " << (*node_list.begin())->split_dim << endl;
         	int check_res = checkBoxIntersection(target, *node_list.begin(), distanceTol, (*node_list.begin())->split_dim);
-      
+      		//std::cout << "A1" << endl;
             // check which node to open next
           	switch(check_res)
             {
-                case 1: node_list.push_back(node_list[0]->left); break;
-              	case 2: node_list.push_back(node_list[0]->right); break;  
+                case 1: if ((*node_list.begin())->right != NULL) node_list.push_back((*node_list.begin())->right); break;
+              	case 2: if ((*node_list.begin())->left != NULL) node_list.push_back((*node_list.begin())->left); break;  
                	case 3:
 					//cout << node_list[0]->left << " " << node_list[0]->right << endl;
-              		if (isInBox(node_list[0]->left, target, distanceTol))
-                    { 
-                      node_list.push_back(node_list[0]->left);
-                      node_list.push_back(node_list[0]->right);
-                    } else
+                	if ((*node_list.begin())->right != NULL && (*node_list.begin())->left != NULL) // left and right are not eq. to null
                     {
-                      node_list.push_back(node_list[0]->right);
-                      node_list.push_back(node_list[0]->left);                      
+                      if (isInBox((*node_list.begin())->left, target, distanceTol))
+                      { 
+                        node_list.push_back((*node_list.begin())->right);
+                        node_list.push_back((*node_list.begin())->left);
+                      } else
+                      {
+                        node_list.push_back((*node_list.begin())->left);
+                        node_list.push_back((*node_list.begin())->right);                      
+                      }
+                      break;
                     }
-
+                	if ((*node_list.begin())->right != NULL) node_list.push_back((*node_list.begin())->right); break;
+ 					if ((*node_list.begin())->left != NULL) node_list.push_back((*node_list.begin())->left); break;  
                 	break;
   
             }
-
+			//std::cout << "B" << " " << node_list.size() << endl;
           node_list.erase(node_list.begin());
+          //std::cout << "B1" << endl;
 
         }
-    
+    	//std::cout << "B2" << endl;
 		return ids;
 	}
 };
