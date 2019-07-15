@@ -23,6 +23,7 @@ struct KdTree
 {
 	Node* root;
   	Node** cnode; // the current node
+  	Node* outNode; // used in search (tol = 0.0)
   	int depth = 0;
   	Node* lastNode; // used in search method
 
@@ -43,12 +44,11 @@ struct KdTree
         cnode = &root;
         return;
       }
-		
 
 	  // the expression for returning from recursion 
       if  ((*cnode) == NULL)
       {
-        *cnode = new Node(point, id); // assign a new node for the left or right node
+        (*cnode) = new Node(point, id); // assign a new node for the left or right node
         (*cnode)->split_dim = depth % max_dims;
         cnode = &root; // set to root node 
         depth = 0; // reset the depth counter
@@ -90,25 +90,26 @@ struct KdTree
 		if (push) 
 		{
 			ids->push_back(node->id);
-			cnode = &node;
+			outNode = node;
+          	//std::cout << "cnode = " << outNode << " id=" << outNode->id << endl;
 		}
+      	//std::cout << "Tree point:" << node->point[0] << ", " << node->point[1] << endl;
 
 		// h node to open as the next
 		int split_dim = node->split_dim;
-		std::vector<int> new_ids;
 		// left:
 		if ((target[split_dim] - distanceTol) < node->point[split_dim] && (target[split_dim] + distanceTol) < node->point[split_dim])
 		{
 			checkIntersection(node->left, target, distanceTol, ids);
 		}
 		// right:
-		if ((target[split_dim] - distanceTol) >= node->point[split_dim] && (target[split_dim] + distanceTol) > node->point[split_dim])
+		if ((target[split_dim] - distanceTol) > node->point[split_dim] && (target[split_dim] + distanceTol) > node->point[split_dim])
 		{
 			checkIntersection(node->right, target, distanceTol, ids);
 		}
 		// both:
 
-		if ((target[split_dim] - distanceTol) < node->point[split_dim] && (target[split_dim] + distanceTol) > node->point[split_dim])
+		if ((target[split_dim] - distanceTol) <= node->point[split_dim] && (target[split_dim] + distanceTol) >= node->point[split_dim])
 		{
 			checkIntersection(node->left, target, distanceTol, ids);	
 			checkIntersection(node->right, target, distanceTol, ids);
@@ -121,9 +122,8 @@ struct KdTree
   	std::vector<int> search(std::vector<float> target, float distanceTol)
 	{
       	std::vector<int>* ids (new std::vector<int>);
-		Node* currNode = root;
 		
-		checkIntersection(currNode, target, distanceTol, ids);
+		checkIntersection(root, target, distanceTol, ids);
 		return *ids;	
 	}
 

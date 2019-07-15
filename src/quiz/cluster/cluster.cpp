@@ -82,13 +82,10 @@ void proximity(std::vector<float> point, KdTree* tree, std::vector<int>* cluster
 {
 		// get point's id and an object of the node
     	std::vector<int> listP = tree->search(point, 0.0);
-		
 		// check an error
-		Node* x = *tree->cnode;
-		if (x->id != *listP.begin()) std::cout << "Something wrong in point search" << endl;
-
+		if (tree->outNode->id != *listP.begin()) std::cout << "Something wrong in point search" << endl;
 		// mark point as has been processed
-		x->processed = true;
+		tree->outNode->processed = true;
 
 		// add a new point into the new cluster
 		cluster->push_back(*listP.begin());
@@ -99,8 +96,7 @@ void proximity(std::vector<float> point, KdTree* tree, std::vector<int>* cluster
 		for(int point_id: nearPoints)
 		{
 			listP = tree->search(points[point_id], 0.0);
-			x = *tree->cnode;
-			if (!x->processed) 
+			if (!tree->outNode->processed) 
 				proximity(points[point_id], tree, cluster, distanceTol, points);
 		}
 	
@@ -111,29 +107,21 @@ std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<flo
 
 	// TODO: Fill out this function to return list of indices for each cluster
 	std::vector<std::vector<int>> clusters;
+  	//return clusters;
 	//return clusters;
 	// process each point
-	int counter = 0;
+	//int counter = 0;
   	for (std::vector<float> point : points)
     {
 		// get point's id and an object of the node
     	std::vector<int> listP = tree->search(point, 0.0);
-		std::cout << counter << endl;
-		++counter;
-		Node* x = tree->root;
-		std::cout << "Hi" << " " << listP.size() << endl;
-		std::cout << listP[0] << " " << x->id <<  endl;
 		// check an error
-		if (x->id != *listP.begin()) std::cout << "Something wrong in point search" << endl;
-
-		if (x->processed) continue; // cnode contains the object of the point
-		
+		if (tree->outNode->id != *listP.begin()) std::cout << "Something wrong in point search" << endl;
+		if (tree->outNode->processed) continue; // cnode contains the object of the point
 		// create a new cluster
 		std::vector<int> * ncluster (new std::vector<int>);
-
 		proximity(point, tree, ncluster, distanceTol, points);
 		clusters.push_back(*ncluster);
-		
 	}
 	  
 	return clusters;
