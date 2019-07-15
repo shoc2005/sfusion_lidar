@@ -77,41 +77,33 @@ void render2DTree(Node* node, pcl::visualization::PCLVisualizer::Ptr& viewer, Bo
 }
 
 // Process an each point and find neighborhoods by using Euclidean Clustering
-void proximity(const std::vector<float> point, std::vector<int>* cluster, 
-                    KdTree* tree, float distanceTol, const std::vector<std::vector<float>>& points)
+void proximity(std::vector<float> point, KdTree* tree, std::vector<int>* cluster,  
+		float distanceTol, const std::vector<std::vector<float>>& points)
 {
-  // check and mark the point as processed
-  std::vector<int> listP = tree->search(point, 0.0);
-  if (listP.size() == 1) 
-  {
-    	if (!tree->lastNode->processed)
-        {
-    		tree->lastNode->processed = true; // mark point as processed
-        }
-    	else 
-        {
-          return; // the point has been already processed
-        }
-  } 
-  else 
-  {
-    	std::cout << "Something wrong with searching of the point in the KD-Tree" << point[0] << ", " << point[1] << " size =" << listP.size() << std::endl;
-    	return;
-  }
-  
-  // add the point in the cluster
-  cluster->push_back(tree->lastNode->id);
-  std::cout << tree->lastNode->id << endl;
-  
-  // search neighborhoods points
-  std::vector<int> nearbyPoints = tree->search(point, distanceTol);
+		// get point's id and an object of the node
+    	std::vector<int> listP = tree->search(point, 0.0);
+		
+		// check an error
+		Node* x = *tree->cnode;
+		if (x->id != *listP.begin()) std::cout << "Something wrong in point search" << endl;
 
-  for (int id : nearbyPoints)
-  {
-    proximity(points[id], cluster, tree, distanceTol, points);
-  }
+		// mark point as has been processed
+		x->processed = true;
 
-  return;
+		// add a new point into the new cluster
+		cluster->push_back(*listP.begin());
+
+		// get neighborhood points of the point
+		std::vector<int> nearPoints = tree->search(point, distanceTol);
+
+		for(int point_id: nearPoints)
+		{
+			listP = tree->search(points[point_id], 0.0);
+			x = *tree->cnode;
+			if (!x->processed) 
+				proximity(points[point_id], tree, cluster, distanceTol, points);
+		}
+	
 }
 
 std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<float>>& points, KdTree* tree, float distanceTol)
@@ -119,21 +111,31 @@ std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<flo
 
 	// TODO: Fill out this function to return list of indices for each cluster
 	std::vector<std::vector<int>> clusters;
+	//return clusters;
+	// process each point
+	int counter = 0;
   	for (std::vector<float> point : points)
     {
-      std::vector<int> listP = tree->search(point, 0.0);
-  	  if (listP.size() == 1) {
-        //std::cout << "I'm able to find point by self" << points[i][0] << ", " << points[i][1] << endl;
-    	if (!tree->lastNode->processed) // if point has not been processed
-        {
-    		std::vector<int>* newCluster (new std::vector<int>);
-          	proximity(point, newCluster, tree, distanceTol, points);
-          	clusters.push_back(*newCluster);
-          	std::cout << "Cluster size: " << newCluster->size() << endl;
+		// get point's id and an object of the node
+    	std::vector<int> listP = tree->search(point, 0.0);
+		std::cout << counter << endl;
+		++counter;
+		Node* x = tree->root;
+		std::cout << "Hi" << " " << listP.size() << endl;
+		std::cout << listP[0] << " " << x->id <<  endl;
+		// check an error
+		if (x->id != *listP.begin()) std::cout << "Something wrong in point search" << endl;
 
-        }
-      } else std::cout << "Can`t find point by self" << point[0] << ", " << point[1] << endl;
-    }
+		if (x->processed) continue; // cnode contains the object of the point
+		
+		// create a new cluster
+		std::vector<int> * ncluster (new std::vector<int>);
+
+		proximity(point, tree, ncluster, distanceTol, points);
+		clusters.push_back(*ncluster);
+		
+	}
+	  
 	return clusters;
 
 }
@@ -165,7 +167,7 @@ int main ()
   	render2DTree(tree->root,viewer,window, it);
   
   	std::cout << "Test Search" << std::endl;
-  	std::vector<int> nearby = tree->search({8.0,5.3},3.0); // {-6,7},3.0
+  	std::vector<int> nearby = tree->search({-6,7},3.0); // {-6,7},3.0
   	for(int index : nearby)
       std::cout << index << ",";
   	std::cout << std::endl;
