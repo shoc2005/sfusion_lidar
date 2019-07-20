@@ -46,8 +46,7 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer, ProcessPointCloud
                                                                  			Eigen::Vector4f (radius, radius, radius, 1));
 	//renderPointCloud(viewer,inputCloud,"inputCloud");
   	//renderPointCloud(viewer, filtCloud, "inputCloud");
-    //roofBox.setMin(Eigen::Vector4f (-1.5, -1.7, -1.0, 1));
-	//roofBox.setMax(Eigen::Vector4f (2.6, 1.7, -.4, 1));
+/*
   	Box box;
   	box.x_min = -1.5;
     box.y_min = -1.7;
@@ -56,7 +55,7 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer, ProcessPointCloud
     box.y_max = 1.7;
     box.z_max = -.4;
   	renderBox(viewer, box, 0, Color(0,1,0));
-  
+*/  
   	// make segmentation
   	std::pair<pcl::PointCloud<pcl::PointXYZI>::Ptr, 
   			pcl::PointCloud<pcl::PointXYZI>::Ptr> segRes = pointProc->SegmentPlane(filtCloud, 100, 0.1);
@@ -135,7 +134,7 @@ void initCamera(CameraAngle setAngle, pcl::visualization::PCLVisualizer::Ptr& vi
         case XY : viewer->setCameraPosition(-distance, -distance, distance, 1, 1, 0); break;
         case TopDown : viewer->setCameraPosition(0, 0, distance, 1, 0, 1); break;
         case Side : viewer->setCameraPosition(0, -distance, 0, 0, 0, 1); break;
-        case FPS : viewer->setCameraPosition(-10, 0, 0, 0, 0, 1);
+        case FPS : viewer->setCameraPosition(-16, 0, 0, 0, 0, 1);
     }
 
     if(setAngle!=FPS)
@@ -148,7 +147,7 @@ int main (int argc, char** argv)
     std::cout << "starting enviroment" << std::endl;
 
     pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-    CameraAngle setAngle = Side;// XY;
+    CameraAngle setAngle = FPS;// XY;
     initCamera(setAngle, viewer);
     //simpleHighway(viewer);
 	//cityBlock(viewer);
